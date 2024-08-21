@@ -17,12 +17,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.AddPhotoAlternate
-import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -42,23 +43,22 @@ import com.solodev.gemen.ai.R
 import com.solodev.gemen.ai.presentation.components.ModelChatItem
 import com.solodev.gemen.ai.presentation.components.UserChatItem
 import com.solodev.gemen.ai.presentation.components.getBitmap
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 @Composable
 fun ChatScreen(
     paddingValues: PaddingValues,
 ) {
-    val chaViewModel = viewModel<ChatViewModel>()
-    val chatState = chaViewModel.chatState.collectAsState().value
-    val uriState = MutableStateFlow("")
-    val bitmap = getBitmap(uriState)
+    val chatViewModel = viewModel<ChatViewModel>()
+    val chatState = chatViewModel.chatState.collectAsState().value
+
+    val bitmap = getBitmap(chatViewModel.uriState)
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         uri.let {
-            uriState.update { uri.toString() }
+            chatViewModel.uriState.update { uri.toString() }
         }
     }
 
@@ -103,72 +103,74 @@ fun ChatScreen(
             }
         }
 
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp, start = 4.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .wrapContentHeight()
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.End
         ) {
 
-            Column {
-                bitmap?.let {
-                    Image(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .padding(bottom = 2.dp)
-                            .clip(RoundedCornerShape(6.dp)),
-                        contentDescription = "picked image",
-                        contentScale = ContentScale.Crop,
-                        bitmap = it.asImageBitmap()
-                    )
-                }
+            bitmap?.let { img ->
+                Image(
+                    bitmap = img.asImageBitmap(),
+                    contentDescription = "picked image",
+                    modifier = Modifier
+                        .size(140.dp)
+                        .padding(bottom = 10.dp)
+                        .clip(RoundedCornerShape(6.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp, start = 4.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
 
                 Icon(
                     modifier = Modifier
                         .size(40.dp)
                         .clickable {
-                            imagePicker.launch(
-                                PickVisualMediaRequest
-                                    .Builder()
-                                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                    .build()
-                            )
+                            imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         },
                     imageVector = Icons.Rounded.AddPhotoAlternate,
                     contentDescription = "Add Photo",
                     tint = MaterialTheme.colorScheme.primary
                 )
-            }
 
-            Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-            TextField(
-                modifier = Modifier
-                    .weight(1f),
-                value = chatState.prompt,
-                onValueChange = {
-                    chaViewModel.onEvent(ChatUiEvent.UpdatePrompt(it))
-                },
-                placeholder = {
-                    Text(text = "Type a prompt")
-                }
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Icon(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clickable {
-                        chaViewModel.onEvent(ChatUiEvent.SendPrompt(chatState.prompt, bitmap))
-                        uriState.update { "" }
+                TextField(
+                    modifier = Modifier.weight(1f),
+                    value = chatState.prompt,
+                    onValueChange = {
+                        chatViewModel.onEvent(ChatUiEvent.UpdatePrompt(it))
                     },
-                imageVector = Icons.Rounded.Send,
-                contentDescription = "Send prompt",
-                tint = MaterialTheme.colorScheme.primary
-            )
+                    placeholder = {
+                        Text(text = "Type a prompt")
+                    }
+                )
 
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Icon(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clickable {
+                            chatViewModel.onEvent(ChatUiEvent.SendPrompt(chatState.prompt, bitmap))
+                            chatViewModel.uriState.update { "" }
+                        },
+                    imageVector = Icons.AutoMirrored.Rounded.Send,
+                    contentDescription = "Send prompt",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+
+            }
         }
+
 
     }
 

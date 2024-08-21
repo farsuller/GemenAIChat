@@ -18,6 +18,8 @@ class ChatViewModel @Inject constructor(private val repository: ChatRepository) 
     private val _chatState = MutableStateFlow(ChatState())
     val chatState = _chatState.asStateFlow()
 
+    val uriState = MutableStateFlow("")
+
     fun onEvent(event: ChatUiEvent) {
         when (event) {
             is ChatUiEvent.SendPrompt -> {

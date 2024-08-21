@@ -35,7 +35,7 @@ class ChatRepositoryImpl(private val apiKey: String) : ChatRepository {
 
     override suspend fun getChatResponseWithImage(prompt: String, bitmap: Bitmap): Chat {
         val generativeModel = GenerativeModel(
-            modelName = "gemini-pro-vision", apiKey = apiKey
+            modelName = "gemini-1.5-flash", apiKey = apiKey
         )
 
         return try {
